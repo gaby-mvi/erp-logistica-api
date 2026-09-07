@@ -29,4 +29,8 @@ public class Marketplace extends EntidadeBase {
 
     @Column(length = 100)
     private String email;
+
+    @Builder.Default
+    @Column(length = 20)
+    private String status = "ATIVO";
 }

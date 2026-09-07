@@ -43,4 +43,46 @@ public class MotoristaController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Motorista motoristaAtualizado) {
+        return motoristaRepository.findById(id)
+                .map(existente -> {
+                    // Valida se o CPF foi alterado e se já pertence a outro motorista
+                    if (!existente.getCpf().equals(motoristaAtualizado.getCpf()) &&
+                        motoristaRepository.existsByCpf(motoristaAtualizado.getCpf())) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body("Já existe outro motorista cadastrado com o CPF informado.");
+                    }
+
+                    // Valida se a CNH foi alterada e se já pertence a outro motorista
+                    if (!existente.getCnh().equals(motoristaAtualizado.getCnh()) &&
+                        motoristaRepository.existsByCnh(motoristaAtualizado.getCnh())) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body("Já existe outro motorista cadastrado com a CNH informada.");
+                    }
+
+                    existente.setNome(motoristaAtualizado.getNome());
+                    existente.setCpf(motoristaAtualizado.getCpf());
+                    existente.setCnh(motoristaAtualizado.getCnh());
+                    existente.setTelefone(motoristaAtualizado.getTelefone());
+
+                    if (motoristaAtualizado.getAtivo() != null) {
+                        existente.setAtivo(motoristaAtualizado.getAtivo());
+                    }
+
+                    Motorista salvo = motoristaRepository.save(existente);
+                    return ResponseEntity.ok(salvo);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        if (!motoristaRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        motoristaRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }

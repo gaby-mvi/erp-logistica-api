@@ -39,4 +39,38 @@ public class MarketplaceController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Marketplace marketplaceAtualizado) {
+        return marketplaceRepository.findById(id)
+                .map(existente -> {
+                    // Valida se o CNPJ mudou e se o novo já pertence a outro registro
+                    if (!existente.getCnpj().equals(marketplaceAtualizado.getCnpj()) &&
+                            marketplaceRepository.existsByCnpj(marketplaceAtualizado.getCnpj())) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body("Já existe outro marketplace cadastrado com o CNPJ informado.");
+                    }
+
+                    existente.setNome(marketplaceAtualizado.getNome());
+                    existente.setCnpj(marketplaceAtualizado.getCnpj());
+                    existente.setEmail(marketplaceAtualizado.getEmail());
+
+                    if (marketplaceAtualizado.getStatus() != null) {
+                        existente.setStatus(marketplaceAtualizado.getStatus());
+                    }
+
+                    Marketplace salvo = marketplaceRepository.save(existente);
+                    return ResponseEntity.ok(salvo);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        if (!marketplaceRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        marketplaceRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
