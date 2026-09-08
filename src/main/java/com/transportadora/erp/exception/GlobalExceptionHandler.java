@@ -1,5 +1,6 @@
 package com.transportadora.erp.exception;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Captura erros de validação das anotações (@NotBlank, @NotNull, etc.)
+    // Captura erros de validação das anotações (@NotBlank, @NotNull, etc.) -> HTTP 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErroResposta> tratarValidacao(MethodArgumentNotValidException ex) {
         List<String> erros = ex.getBindingResult().getFieldErrors().stream()
@@ -30,7 +31,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
     }
 
-    // Captura violações de chaves únicas ou constraints do banco de dados (ex: Placa/CPF duplicados)
+    // Captura erros de regras de negócio (ex: validações no Service) -> HTTP 400
+    @ExceptionHandler({IllegalArgumentException.class, RuntimeException.class})
+    public ResponseEntity<ErroResposta> tratarRegraNegocio(RuntimeException ex) {
+        ErroResposta resposta = new ErroResposta(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                OffsetDateTime.now(),
+                List.of()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
+    }
+
+    // Captura recursos não encontrados (IDs inexistentes) -> HTTP 404
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErroResposta> tratarNaoEncontrado(EntityNotFoundException ex) {
+        ErroResposta resposta = new ErroResposta(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                OffsetDateTime.now(),
+                List.of()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resposta);
+    }
+
+    // Captura violações de chaves únicas ou constraints do banco de dados (ex: Placa/CPF duplicados) -> HTTP 409
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErroResposta> tratarIntegridadeBanco(DataIntegrityViolationException ex) {
         ErroResposta resposta = new ErroResposta(
@@ -43,7 +70,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(resposta);
     }
 
-    // Captura exceções genéricas / não tratadas (evita expor o stack trace padrão no HTTP 500)
+    // Captura exceções genéricas / não tratadas (evita expor o stack trace padrão no HTTP 500) -> HTTP 500
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResposta> tratarErroGenerico(Exception ex) {
         ErroResposta resposta = new ErroResposta(

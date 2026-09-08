@@ -1,6 +1,7 @@
 package com.transportadora.erp.controller;
 
-import com.transportadora.erp.model.Marketplace;
+import com.transportadora.erp.dto.MarketplaceRequestDTO;
+import com.transportadora.erp.dto.MarketplaceResponseDTO;
 import com.transportadora.erp.service.MarketplaceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,44 +19,13 @@ public class MarketplaceController {
     private final MarketplaceService marketplaceService;
 
     @GetMapping
-    public ResponseEntity<List<Marketplace>> listarTodos() {
+    public ResponseEntity<List<MarketplaceResponseDTO>> listar() {
         return ResponseEntity.ok(marketplaceService.listarTodos());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Marketplace> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(marketplaceService.buscarPorId(id));
-    }
-
     @PostMapping
-    public ResponseEntity<?> criar(@Valid @RequestBody Marketplace marketplace) {
-        try {
-            Marketplace salvo = marketplaceService.criar(marketplace);
-            return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Marketplace marketplace) {
-        try {
-            Marketplace atualizado = marketplaceService.atualizar(id, marketplace);
-            return ResponseEntity.ok(atualizado);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        try {
-            marketplaceService.deletar(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<MarketplaceResponseDTO> cadastrar(@RequestBody @Valid MarketplaceRequestDTO dto) {
+        MarketplaceResponseDTO novo = marketplaceService.cadastrar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novo);
     }
 }

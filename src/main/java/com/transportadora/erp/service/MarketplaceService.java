@@ -1,5 +1,7 @@
 package com.transportadora.erp.service;
 
+import com.transportadora.erp.dto.MarketplaceRequestDTO;
+import com.transportadora.erp.dto.MarketplaceResponseDTO;
 import com.transportadora.erp.model.Marketplace;
 import com.transportadora.erp.repository.MarketplaceRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,47 +17,23 @@ public class MarketplaceService {
     private final MarketplaceRepository marketplaceRepository;
 
     @Transactional(readOnly = true)
-    public List<Marketplace> listarTodos() {
-        return marketplaceRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public Marketplace buscarPorId(Long id) {
-        return marketplaceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Marketplace não encontrado com o ID: " + id));
+    public List<MarketplaceResponseDTO> listarTodos() {
+        return marketplaceRepository.findAll()
+                .stream()
+                .map(MarketplaceResponseDTO::new)
+                .toList();
     }
 
     @Transactional
-    public Marketplace criar(Marketplace marketplace) {
-        if (marketplaceRepository.existsByCnpj(marketplace.getCnpj())) {
-            throw new IllegalArgumentException("Já existe um marketplace cadastrado com o CNPJ informado.");
-        }
-        return marketplaceRepository.save(marketplace);
-    }
+    public MarketplaceResponseDTO cadastrar(MarketplaceRequestDTO dto) {
+        Marketplace marketplace = Marketplace.builder()
+                .nome(dto.nome())
+                .cnpj(dto.cnpj())
+                .email(dto.email())
+                .status("ATIVO")
+                .build();
 
-    @Transactional
-    public Marketplace atualizar(Long id, Marketplace dados) {
-        Marketplace existente = buscarPorId(id);
-
-        if (!existente.getCnpj().equals(dados.getCnpj()) &&
-                marketplaceRepository.existsByCnpj(dados.getCnpj())) {
-            throw new IllegalArgumentException("Já existe outro marketplace cadastrado com o CNPJ informado.");
-        }
-
-        existente.setNome(dados.getNome());
-        existente.setCnpj(dados.getCnpj());
-        existente.setEmail(dados.getEmail());
-
-        if (dados.getStatus() != null) {
-            existente.setStatus(dados.getStatus());
-        }
-
-        return marketplaceRepository.save(existente);
-    }
-
-    @Transactional
-    public void deletar(Long id) {
-        Marketplace existente = buscarPorId(id);
-        marketplaceRepository.delete(existente);
+        Marketplace salvo = marketplaceRepository.save(marketplace);
+        return new MarketplaceResponseDTO(salvo);
     }
 }

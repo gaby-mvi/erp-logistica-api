@@ -1,5 +1,7 @@
 package com.transportadora.erp.service;
 
+import com.transportadora.erp.dto.MotoristaRequestDTO;
+import com.transportadora.erp.dto.MotoristaResponseDTO;
 import com.transportadora.erp.model.Motorista;
 import com.transportadora.erp.repository.MotoristaRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,56 +17,25 @@ public class MotoristaService {
     private final MotoristaRepository motoristaRepository;
 
     @Transactional(readOnly = true)
-    public List<Motorista> listarTodos() {
-        return motoristaRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public Motorista buscarPorId(Long id) {
-        return motoristaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Motorista não encontrado com o ID: " + id));
+    public List<MotoristaResponseDTO> listarTodos() {
+        return motoristaRepository.findAll()
+                .stream()
+                .map(MotoristaResponseDTO::new)
+                .toList();
     }
 
     @Transactional
-    public Motorista criar(Motorista motorista) {
-        if (motoristaRepository.existsByCpf(motorista.getCpf())) {
-            throw new IllegalArgumentException("Já existe um motorista cadastrado com o CPF informado.");
-        }
-        if (motoristaRepository.existsByCnh(motorista.getCnh())) {
-            throw new IllegalArgumentException("Já existe um motorista cadastrado com a CNH informada.");
-        }
-        return motoristaRepository.save(motorista);
-    }
+    public MotoristaResponseDTO cadastrar(MotoristaRequestDTO dto) {
+        // Criando a entidade via Builder com os dados validados do DTO
+        Motorista motorista = Motorista.builder()
+                .nome(dto.nome())
+                .cpf(dto.cpf())
+                .cnh(dto.cnh())
+                .telefone(dto.telefone())
+                .ativo(true)
+                .build();
 
-    @Transactional
-    public Motorista atualizar(Long id, Motorista dados) {
-        Motorista existente = buscarPorId(id);
-
-        if (!existente.getCpf().equals(dados.getCpf()) &&
-                motoristaRepository.existsByCpf(dados.getCpf())) {
-            throw new IllegalArgumentException("Já existe outro motorista cadastrado com o CPF informado.");
-        }
-
-        if (!existente.getCnh().equals(dados.getCnh()) &&
-                motoristaRepository.existsByCnh(dados.getCnh())) {
-            throw new IllegalArgumentException("Já existe outro motorista cadastrado com a CNH informada.");
-        }
-
-        existente.setNome(dados.getNome());
-        existente.setCpf(dados.getCpf());
-        existente.setCnh(dados.getCnh());
-        existente.setTelefone(dados.getTelefone());
-
-        if (dados.getAtivo() != null) {
-            existente.setAtivo(dados.getAtivo());
-        }
-
-        return motoristaRepository.save(existente);
-    }
-
-    @Transactional
-    public void deletar(Long id) {
-        Motorista existente = buscarPorId(id);
-        motoristaRepository.delete(existente);
+        Motorista salvo = motoristaRepository.save(motorista);
+        return new MotoristaResponseDTO(salvo);
     }
 }

@@ -1,58 +1,36 @@
 package com.transportadora.erp.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rota")
+@Table(name = "rotas")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Rota extends EntidadeBase {
+@EqualsAndHashCode(of = "id")
+public class Rota {
 
-    @NotBlank(message = "O código do romaneio é obrigatório")
-    @Column(nullable = false, unique = true, length = 50)
-    private String codigoRomaneio;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @NotNull(message = "O motorista é obrigatório")
-    @ManyToOne
-    @JoinColumn(name = "motorista_id", nullable = false)
-    private Motorista motorista;
-
-    @NotNull(message = "O veículo é obrigatório")
-    @ManyToOne
-    @JoinColumn(name = "veiculo_id", nullable = false)
-    private Veiculo veiculo;
-
+    private String codigo;
+    private String origem;
+    private String destino;
+    
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private StatusRota status = StatusRota.PLANEJADA;
+    private StatusRota status; // Ex: EM_ANDAMENTO, CONCLUIDA, CANCELADA
 
-    private OffsetDateTime dataInicio;
-    private OffsetDateTime dataFim;
-
-    @OneToMany
-    @JoinColumn(name = "rota_id")
-    @Builder.Default
-    private List<Pacote> pacotes = new ArrayList<>();
+    private LocalDateTime dataCriacao;
 
     @PrePersist
-    public void prePersistRota() {
+    public void prePersist() {
+        this.dataCriacao = LocalDateTime.now();
         if (this.status == null) {
-            this.status = StatusRota.PLANEJADA;
+            this.status = StatusRota.EM_ANDAMENTO;
         }
     }
 }
