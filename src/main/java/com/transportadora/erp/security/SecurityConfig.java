@@ -29,13 +29,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilita o CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
+                    // Endpoint público de autenticação e documentação
                     req.requestMatchers("/api/auth/**").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/api/rotas/**").hasAnyRole("ADMIN", "OPERADOR");
+                    
+                    // Restringe POST/PUT/DELETE em rotas para perfis específicos (usando authority direta)
+                    req.requestMatchers(HttpMethod.POST, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
+                    req.requestMatchers(HttpMethod.PUT, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
+                    req.requestMatchers(HttpMethod.DELETE, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN");
+
+                    // Qualquer outra requisição (incluindo GET /api/rotas) exige apenas estar autenticado
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -45,7 +52,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permite requisições das portas padrão do React, Vite, Angular, etc.
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173", "http://localhost:4200"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
