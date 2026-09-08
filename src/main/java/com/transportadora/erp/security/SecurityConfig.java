@@ -33,16 +33,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    // Endpoint público de autenticação e documentação
+                    // Rotas públicas (Autenticação e Documentação OpenAPI / Swagger)
                     req.requestMatchers("/api/auth/**").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
-                    
-                    // Restringe POST/PUT/DELETE em rotas para perfis específicos (usando authority direta)
+
+                    // Permissões específicas de escrita/exclusão na API de Rotas
                     req.requestMatchers(HttpMethod.POST, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
                     req.requestMatchers(HttpMethod.PUT, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
                     req.requestMatchers(HttpMethod.DELETE, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN");
 
-                    // Qualquer outra requisição (incluindo GET /api/rotas) exige apenas estar autenticado
+                    // Qualquer outra requisição (incluindo GETs no Dashboard) exige apenas estar autenticado
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -52,7 +52,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173", "http://localhost:4200"));
+
+        // Permite conexões de portas locais de desenvolvimento e do ambiente hospedado na Render
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.onrender.com"
+        ));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
