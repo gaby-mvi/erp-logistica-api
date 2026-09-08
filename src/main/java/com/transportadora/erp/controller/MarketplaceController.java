@@ -1,7 +1,7 @@
 package com.transportadora.erp.controller;
 
 import com.transportadora.erp.model.Marketplace;
-import com.transportadora.erp.repository.MarketplaceRepository;
+import com.transportadora.erp.service.MarketplaceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,62 +15,47 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MarketplaceController {
 
-    private final MarketplaceRepository marketplaceRepository;
-
-    @PostMapping
-    public ResponseEntity<?> criar(@Valid @RequestBody Marketplace marketplace) {
-        if (marketplaceRepository.existsByCnpj(marketplace.getCnpj())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Já existe um marketplace cadastrado com o CNPJ informado.");
-        }
-
-        Marketplace salvo = marketplaceRepository.save(marketplace);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
-    }
+    private final MarketplaceService marketplaceService;
 
     @GetMapping
     public ResponseEntity<List<Marketplace>> listarTodos() {
-        return ResponseEntity.ok(marketplaceRepository.findAll());
+        return ResponseEntity.ok(marketplaceService.listarTodos());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Marketplace> buscarPorId(@PathVariable Long id) {
-        return marketplaceRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(marketplaceService.buscarPorId(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> criar(@Valid @RequestBody Marketplace marketplace) {
+        try {
+            Marketplace salvo = marketplaceService.criar(marketplace);
+            return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Marketplace marketplaceAtualizado) {
-        return marketplaceRepository.findById(id)
-                .map(existente -> {
-                    // Valida se o CNPJ mudou e se o novo já pertence a outro registro
-                    if (!existente.getCnpj().equals(marketplaceAtualizado.getCnpj()) &&
-                            marketplaceRepository.existsByCnpj(marketplaceAtualizado.getCnpj())) {
-                        return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body("Já existe outro marketplace cadastrado com o CNPJ informado.");
-                    }
-
-                    existente.setNome(marketplaceAtualizado.getNome());
-                    existente.setCnpj(marketplaceAtualizado.getCnpj());
-                    existente.setEmail(marketplaceAtualizado.getEmail());
-
-                    if (marketplaceAtualizado.getStatus() != null) {
-                        existente.setStatus(marketplaceAtualizado.getStatus());
-                    }
-
-                    Marketplace salvo = marketplaceRepository.save(existente);
-                    return ResponseEntity.ok(salvo);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Marketplace marketplace) {
+        try {
+            Marketplace atualizado = marketplaceService.atualizar(id, marketplace);
+            return ResponseEntity.ok(atualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        if (!marketplaceRepository.existsById(id)) {
+        try {
+            marketplaceService.deletar(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-        marketplaceRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 }

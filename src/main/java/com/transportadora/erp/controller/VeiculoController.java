@@ -1,7 +1,7 @@
 package com.transportadora.erp.controller;
 
 import com.transportadora.erp.model.Veiculo;
-import com.transportadora.erp.repository.VeiculoRepository;
+import com.transportadora.erp.service.VeiculoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,63 +15,47 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VeiculoController {
 
-    private final VeiculoRepository veiculoRepository;
-
-    @PostMapping
-    public ResponseEntity<?> criar(@Valid @RequestBody Veiculo veiculo) {
-        if (veiculoRepository.existsByPlaca(veiculo.getPlaca())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Já existe um veículo cadastrado com a placa informada.");
-        }
-
-        Veiculo salvo = veiculoRepository.save(veiculo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
-    }
+    private final VeiculoService veiculoService;
 
     @GetMapping
     public ResponseEntity<List<Veiculo>> listarTodos() {
-        return ResponseEntity.ok(veiculoRepository.findAll());
+        return ResponseEntity.ok(veiculoService.listarTodos());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Veiculo> buscarPorId(@PathVariable Long id) {
-        return veiculoRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(veiculoService.buscarPorId(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> criar(@Valid @RequestBody Veiculo veiculo) {
+        try {
+            Veiculo salvo = veiculoService.criar(veiculo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Veiculo veiculoAtualizado) {
-        return veiculoRepository.findById(id)
-                .map(existente -> {
-                    // Valida se a placa foi alterada e se já pertence a outro veículo
-                    if (!existente.getPlaca().equalsIgnoreCase(veiculoAtualizado.getPlaca()) &&
-                        veiculoRepository.existsByPlaca(veiculoAtualizado.getPlaca())) {
-                        return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body("Já existe outro veículo cadastrado com a placa informada.");
-                    }
-
-                    existente.setPlaca(veiculoAtualizado.getPlaca());
-                    existente.setModelo(veiculoAtualizado.getModelo());
-                    existente.setMarca(veiculoAtualizado.getMarca());
-                    existente.setTipo(veiculoAtualizado.getTipo());
-
-                    if (veiculoAtualizado.getAtivo() != null) {
-                        existente.setAtivo(veiculoAtualizado.getAtivo());
-                    }
-
-                    Veiculo salvo = veiculoRepository.save(existente);
-                    return ResponseEntity.ok(salvo);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @Valid @RequestBody Veiculo veiculo) {
+        try {
+            Veiculo atualizado = veiculoService.atualizar(id, veiculo);
+            return ResponseEntity.ok(atualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        if (!veiculoRepository.existsById(id)) {
+        try {
+            veiculoService.deletar(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-        veiculoRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 }
