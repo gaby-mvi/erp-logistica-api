@@ -4,7 +4,7 @@ import com.transportadora.erp.model.Rota;
 import com.transportadora.erp.model.StatusRota;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 public record RotaResponseDTO(
     Long id,
@@ -19,7 +19,7 @@ public record RotaResponseDTO(
     String veiculoPlaca,
     Long marketplaceId,
     String marketplaceNome,
-    OffsetDateTime criadoEm
+    LocalDateTime criadoEm
 ) {
     public RotaResponseDTO(Rota rota) {
         this(

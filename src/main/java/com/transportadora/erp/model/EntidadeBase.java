@@ -9,7 +9,7 @@ import jakarta.persistence.PreUpdate;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Getter
@@ -20,17 +20,17 @@ public abstract class EntidadeBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private OffsetDateTime criadoEm;
-    private OffsetDateTime atualizadoEm;
+    private LocalDateTime criadoEm;
+    private LocalDateTime atualizadoEm;
 
     @PrePersist
     public void aoCriar() {
-        this.criadoEm = OffsetDateTime.now();
-        this.atualizadoEm = OffsetDateTime.now();
+        this.criadoEm = LocalDateTime.now();
+        this.atualizadoEm = LocalDateTime.now();
     }
 
     @PreUpdate
     public void aoAtualizar() {
-        this.atualizadoEm = OffsetDateTime.now();
+        this.atualizadoEm = LocalDateTime.now();
     }
 }
