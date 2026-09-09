@@ -2,7 +2,9 @@ package com.transportadora.erp.dto;
 
 import com.transportadora.erp.model.Rota;
 import com.transportadora.erp.model.StatusRota;
-import java.time.LocalDateTime;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 public record RotaResponseDTO(
     Long id,
@@ -10,10 +12,30 @@ public record RotaResponseDTO(
     String origem,
     String destino,
     StatusRota status,
-    LocalDateTime dataCriacao
+    BigDecimal valorRepasse,
+    Long motoristaId,
+    String motoristaNome,
+    Long veiculoId,
+    String veiculoPlaca,
+    Long marketplaceId,
+    String marketplaceNome,
+    OffsetDateTime criadoEm
 ) {
-    // Construtor utilitário para converter Model -> DTO
     public RotaResponseDTO(Rota rota) {
-        this(rota.getId(), rota.getCodigo(), rota.getOrigem(), rota.getDestino(), rota.getStatus(), rota.getDataCriacao());
+        this(
+            rota.getId(),
+            rota.getCodigo(),
+            rota.getOrigem(),
+            rota.getDestino(),
+            rota.getStatus(),
+            rota.getValorRepasse(),
+            rota.getMotorista() != null ? rota.getMotorista().getId() : null,
+            rota.getMotorista() != null ? rota.getMotorista().getNome() : null,
+            rota.getVeiculo() != null ? rota.getVeiculo().getId() : null,
+            rota.getVeiculo() != null ? rota.getVeiculo().getPlaca() : null,
+            rota.getMarketplace() != null ? rota.getMarketplace().getId() : null,
+            rota.getMarketplace() != null ? rota.getMarketplace().getNome() : null,
+            rota.getCriadoEm()
+        );
     }
 }

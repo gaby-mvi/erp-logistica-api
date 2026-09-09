@@ -2,35 +2,43 @@ package com.transportadora.erp.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "rotas")
+@Table(name = "rota")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "id")
-public class Rota {
+@Builder // <--- ESSA ANOTAÇÃO É OBRIGATÓRIA PARA USAR .builder()
+public class Rota extends EntidadeBase {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @Column(nullable = false, unique = true, length = 50)
     private String codigo;
+
+    @Column(nullable = false, length = 150)
     private String origem;
+
+    @Column(nullable = false, length = 150)
     private String destino;
-    
+
     @Enumerated(EnumType.STRING)
-    private StatusRota status; // Ex: EM_ANDAMENTO, CONCLUIDA, CANCELADA
+    @Column(nullable = false)
+    @Builder.Default
+    private StatusRota status = StatusRota.EM_ANDAMENTO;
 
-    private LocalDateTime dataCriacao;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal valorRepasse;
 
-    @PrePersist
-    public void prePersist() {
-        this.dataCriacao = LocalDateTime.now();
-        if (this.status == null) {
-            this.status = StatusRota.EM_ANDAMENTO;
-        }
-    }
+    @ManyToOne
+    @JoinColumn(name = "motorista_id", nullable = false)
+    private Motorista motorista;
+
+    @ManyToOne
+    @JoinColumn(name = "veiculo_id", nullable = false)
+    private Veiculo veiculo;
+
+    @ManyToOne
+    @JoinColumn(name = "marketplace_id")
+    private Marketplace marketplace;
 }
