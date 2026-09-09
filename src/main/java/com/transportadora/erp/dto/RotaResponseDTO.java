@@ -28,7 +28,7 @@ public record RotaResponseDTO(
             rota.getOrigem(),
             rota.getDestino(),
             rota.getStatus(),
-            rota.getValorRepasse(),
+            rota.getValorRepasse() != null ? rota.getValorRepasse() : BigDecimal.ZERO,
             rota.getMotorista() != null ? rota.getMotorista().getId() : null,
             rota.getMotorista() != null ? rota.getMotorista().getNome() : null,
             rota.getVeiculo() != null ? rota.getVeiculo().getId() : null,
