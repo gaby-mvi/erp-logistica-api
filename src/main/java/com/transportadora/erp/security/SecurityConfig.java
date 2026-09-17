@@ -33,16 +33,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    // Rotas públicas (Autenticação e Documentação OpenAPI / Swagger)
-                    req.requestMatchers("/api/auth/**").permitAll();
+                    // Rotas públicas (Liberado login em /login, /api/login e documentação Swagger)
+                    req.requestMatchers("/login", "/api/login", "/api/auth/**").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
 
-                    // Permissões específicas de escrita/exclusão na API de Rotas
-                    req.requestMatchers(HttpMethod.POST, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
-                    req.requestMatchers(HttpMethod.PUT, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OPERADOR");
-                    req.requestMatchers(HttpMethod.DELETE, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ROLE_ADMIN");
+                    // Permissões específicas de escrita/exclusão na API de Rotas (Aceita com ou sem prefixo ROLE_)
+                    req.requestMatchers(HttpMethod.POST, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN", "OPERADOR", "ROLE_OPERADOR");
+                    req.requestMatchers(HttpMethod.PUT, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN", "OPERADOR", "ROLE_OPERADOR");
+                    req.requestMatchers(HttpMethod.DELETE, "/api/rotas", "/api/rotas/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
 
-                    // Qualquer outra requisição (incluindo GETs no Dashboard) exige apenas estar autenticado
+                    // Qualquer outra requisição exige autenticação
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -53,7 +53,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permite conexões de portas locais de desenvolvimento e do ambiente hospedado na Render
+        // Permite conexões do ambiente local e hospedado na Render
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "https://*.onrender.com"
